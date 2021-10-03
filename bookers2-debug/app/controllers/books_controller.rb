@@ -1,21 +1,29 @@
 class BooksController < ApplicationController
+  before_action :authenticate_user!
+  before_action :editing_user, only: [:edit]
 
   def show
+    @booknew = Book.new
     @book = Book.find(params[:id])
+    @user = @book.user
+    @user = User.find(@book.user_id)
   end
 
   def index
+    @booknew = Book.new
     @books = Book.all
+    @user = current_user
   end
 
   def create
-    @book = Book.new(book_params)
-    @book.user_id = current_user.id
-    if @book.save
-      redirect_to book_path(@book), notice: "You have created book successfully."
+    @booknew = Book.new(book_params)
+    @booknew.user_id = current_user.id
+    if @booknew.save
+      redirect_to book_path(@booknew.id), notice: "You have created book successfully."
     else
       @books = Book.all
-      render 'index'
+      @user = current_user
+      render :index
     end
   end
 
@@ -34,16 +42,21 @@ class BooksController < ApplicationController
     end
   end
 
-  def delete
+  def destroy
     @book = Book.find(params[:id])
-    @book.destoy
+    @book.destroy
     redirect_to books_path
   end
 
   private
-
   def book_params
-    params.require(:book).permit(:title)
+    params[:book].permit(:title,:body)
   end
 
+  def editing_user
+    book = Book.find(params[:id])
+    if book.user != current_user
+      redirect_to books_path
+    end
+  end
 end
